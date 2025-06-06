@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>authentication system</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      async function signup() {
+        const username = document.getElementById("signup-username").value;
+        const password = document.getElementById("signup-password").value;
+        await axios.post("http://localhost:3000/signup", {
+          username: username,
+          password: password,
+        });
+        alert("User signed up successfully");
+      }
+      async function signin() {
+        const username = document.getElementById("signin-username").value;
+        const password = document.getElementById("signin-password").value;
+
+        const response = await axios.post("http://localhost:3000/signin", {
+          username: username,
+          password: password,
+        });
+        localStorage.setItem("token", response.data.token);
+        alert("User signed in successfully");
+          getuserInfo();
+      }
+      async function getuserInfo() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          document.getElementById(
+            "information"
+          ).innerHTML = `<p>Please sign in to view user information.</p>`;
+          return;
+        }
+        try {
+          const response = await axios.get("http://localhost:3000/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          document.getElementById("information").innerHTML = `
+                        <p>Username: ${response.data.username}</p>`;
+                        console.log(response.data);
+        } catch (err) {
+          if (
+            err.response &&
+            (err.response.status === 401 || err.response.status === 404)
+          ) {
+            document.getElementById(
+              "information"
+            ).innerHTML = `<p>Please sign in to view user information.</p>`;
+            localStorage.removeItem("token"); // Optionally clear invalid token
+          } else {
+            document.getElementById(
+              "information"
+            ).innerHTML = `<p>Error fetching user information: ${err.message}</p>`;
+          }
+        }
+      }
+
+      // Only call getuserInfo() if a token is present
+      if (localStorage.getItem("token")) {
+        getuserInfo();
+      }
+      function logout() {
+        localStorage.removeItem("token");
+        document.getElementById(
+          "logout"
+        ).innerHTML = `<p>You have logged out.</p>`;
+      }
+    </script>
+  </head>
+  <body>
+    <div>
+      signup
+      <input type="text" id="signup-username" placeholder="Username" />
+      <input type="text" id="signup-password" placeholder="Password" />
+      <button id="signup" onclick="signup()">submit</button>
+    </div>
+    <div>
+      signin
+      <input type="text" id="signin-username" placeholder="Username" />
+      <input type="text" id="signin-password" placeholder="Password" />
+      <button id="signin" onclick="signin()">submit</button>
+    </div>
+    <div>
+      user information
+      <div id="information"></div>
+    </div>
+    <div>
+      <button id="logout" onclick="logout()">Logout</button>
+    </div>
+  </body>
+</html>
